@@ -1,0 +1,41 @@
+service: ector-serverless-template
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stage: ${opt:stage, 'dev'}
+  region: eu-west-1
+  timeout: 30
+  memorySize: 256
+  environment:
+    STAGE_DEPENDANT_VARIABLE: ${self:custom.env.${self:provider.stage}.stageDependantVariable}
+    SSM_VARIABLE: ${ssm:SSM_VARIABLE~true}
+  tags:
+    environment: ${self:provider.stage}
+    service: ${self:service}
+  apiKeys:
+    - bot-${self:provider.stage}
+
+functions:
+  function:
+    handler: src/function.handler
+    events:
+      - http:
+          method: get
+          path: function
+          private: true
+
+custom:
+  env:
+    staging:
+      stageDependantVariable: ABC
+    dev:
+      stageDependantVariable: ABC
+    prod:
+      stageDependantVariable: ${ssm:PROD_TELEGRAM_TOKEN~true}
+  webpackIncludeModules:
+    forceInclude:
+      - request
+
+plugins:
+  - serverless-offline
+  - serverless-webpack
